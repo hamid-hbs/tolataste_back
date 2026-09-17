@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->unique()->constrained()->cascadeOnDelete();
-            $table->enum('method', ['cash', 'card', 'orange_money', 'wave']);
+            $table->enum('method', ['cash', 'mobile_money']);
             $table->unsignedInteger('amount');
             $table->timestamps();
         });

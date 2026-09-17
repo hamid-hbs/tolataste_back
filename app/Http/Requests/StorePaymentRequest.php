@@ -20,4 +20,11 @@ class StorePaymentRequest extends FormRequest
             'amount' => ['required', 'integer', 'min:0'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'method.in' => 'Moyen de paiement invalide : choisissez Espèces ou Mobile Money.',
+        ];
+    }
 }

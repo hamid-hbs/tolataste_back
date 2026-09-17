@@ -10,6 +10,7 @@ use App\Models\ActivityLog;
 use App\Models\AppNotification;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Table;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,16 +71,36 @@ class OrderController extends Controller
         $data = $request->safe()->only(['type', 'note', 'items']);
         $isStaff = (bool) ($user?->isStaff() ?? false);
 
-        if (! $isStaff) {
-            $data['table_id'] = null;
+        $tableId = $request->validated('table_id');
+
+        if ($tableId) {
+            $table = Table::find($tableId);
+            if (! $table || $table->status !== Table::STATUS_FREE) {
+                return response()->json([
+                    'message' => 'Cette table n\'est plus disponible, veuillez en choisir une autre ou commander à emporter.',
+                ], 409);
+            }
+            // Une commande liée à une table est forcément sur place.
+            $data['table_id'] = $table->id;
+            $data['type'] = Order::TYPE_DINE_IN;
         } else {
-            $data['table_id'] = $request->validated('table_id');
+            $data['table_id'] = null;
+            $data['type'] = $data['type'] ?? Order::TYPE_TAKEAWAY;
         }
 
         // 1. Reconstruction des lignes depuis la BDD (jamais depuis le client).
         $items = $this->buildItems($data['items']);
 
         $order = DB::transaction(function () use ($data, $items, $user, $isStaff) {
+            if (! empty($data['table_id'])) {
+                $lockedTable = Table::whereKey($data['table_id'])->lockForUpdate()->first();
+                if (! $lockedTable || $lockedTable->status !== Table::STATUS_FREE) {
+                    throw ValidationException::withMessages([
+                        'table_id' => 'Cette table n\'est plus disponible, veuillez en choisir une autre ou commander à emporter.',
+                    ]);
+                }
+            }
+
             $order = Order::create([
                 'table_id' => $data['table_id'] ?? null,
                 'type' => $data['type'] ?? Order::TYPE_TAKEAWAY,

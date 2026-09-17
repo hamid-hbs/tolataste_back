@@ -21,6 +21,19 @@ class TableController extends Controller
         return response()->json(['tables' => $tables]);
     }
 
+    /**
+     * Tables libres visibles par les clients (sans auth).
+     */
+    public function available(): JsonResponse
+    {
+        $tables = Table::query()
+            ->where('status', Table::STATUS_FREE)
+            ->orderBy('number')
+            ->get(['id', 'number', 'zone', 'status']);
+
+        return response()->json(['tables' => $tables]);
+    }
+
     public function store(StoreTableRequest $request): JsonResponse
     {
         $table = Table::create($request->validated());

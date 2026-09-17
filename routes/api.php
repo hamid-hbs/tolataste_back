@@ -23,6 +23,9 @@ Route::prefix('v1')->group(function () {
     Route::get('products/{product}', [ProductController::class, 'show']);
     Route::get('categories', [CategoryController::class, 'index']);
 
+    // Tables libres visibles par les clients (choix de la table sur place)
+    Route::get('tables/available', [TableController::class, 'available']);
+
     // Routes authentifiées
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
